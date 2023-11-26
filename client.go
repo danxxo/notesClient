@@ -21,47 +21,37 @@ type Record struct {
 
 type Records []Record
 
-func getRecordFromTerminal() (Record, int) {
-	fieldCounter := 0
+type Response struct {
+	Records      []Record `json:"records"`
+	ErrorMessage string   `json:"err"`
+}
+
+// func for scanning terminal input, reurns the gotten record and num of fields
+func getRecordFromTerminal() Record {
 
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("Enter Name: ")
 	scanner.Scan()
 	Name := scanner.Text()
-	if Name != "" {
-		fieldCounter++
-	}
 
 	fmt.Print("Enter LastName: ")
 	scanner.Scan()
 	LastName := scanner.Text()
-	if LastName != "" {
-		fieldCounter++
-	}
 
 	fmt.Print("Enter MiddleName: ")
 	scanner.Scan()
 	MiddleName := scanner.Text()
-	if MiddleName != "" {
-		fieldCounter++
-	}
 
 	fmt.Print("Enter Address: ")
 	scanner.Scan()
 	Address := scanner.Text()
-	if Address != "" {
-		fieldCounter++
-	}
 
 	fmt.Print("Enter Phone: ")
 	scanner.Scan()
 	Phone := scanner.Text()
-	if Phone != "" {
-		fieldCounter++
-	}
 
-	return Record{Name: Name, LastName: LastName, MiddleName: MiddleName, Address: Address, Phone: Phone}, fieldCounter
+	return Record{Name: Name, LastName: LastName, MiddleName: MiddleName, Address: Address, Phone: Phone}
 }
 
 func main() {
@@ -101,12 +91,7 @@ func main() {
 func addRecord() {
 	fmt.Println("Lets create a new Record!")
 
-	rec, fieldCounter := getRecordFromTerminal()
-
-	if fieldCounter != 5 {
-		fmt.Println("Fill all fields, Abort")
-		return
-	}
+	rec := getRecordFromTerminal()
 
 	jsonRequestBytes, err := json.Marshal(rec)
 	if err != nil {
@@ -129,8 +114,6 @@ func addRecord() {
 	}
 	defer resp.Body.Close()
 
-	// fmt.Println("response Status:", resp.Status)
-	// fmt.Println("response Headers:", resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Print("addRecord()", err)
@@ -140,7 +123,7 @@ func addRecord() {
 }
 
 func getRecord() {
-	rec, _ := getRecordFromTerminal()
+	rec := getRecordFromTerminal()
 
 	jsonRequestBytes, err := json.Marshal(rec)
 	if err != nil {
@@ -154,7 +137,6 @@ func getRecord() {
 		fmt.Println("getRecord()", err)
 		return
 	}
-	//req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -168,23 +150,22 @@ func getRecord() {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("getRecord()", err)
-	}
-
-	var records Records
-	err = json.Unmarshal(body, &records)
-	if err != nil {
-		fmt.Println("getRecord()", err)
+		fmt.Println(err)
 		return
 	}
-
-	if len(records) == 0 {
-		fmt.Println("--No RECORDS finded--")
+	var response Response
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if response.ErrorMessage != "" {
+		fmt.Println("error from server: ", response.ErrorMessage)
 		return
 	}
 
 	fmt.Println("--GET NOTES--")
-	for i, record := range records {
+	for i, record := range response.Records {
 		fmt.Println("\tRecord ", i)
 		fmt.Println("\t\tName: ", record.Name)
 		fmt.Println("\t\tLastName: ", record.LastName)
@@ -198,42 +179,47 @@ func getRecord() {
 
 func updateNotes() {
 	fmt.Println("Let s Update records. Dont forget fill Phone field")
-	rec, fieldCounter := getRecordFromTerminal()
-
-	if rec.Phone == "" {
-		fmt.Println("You Forgot the Phone")
-		return
-	}
-
-	if fieldCounter < 2 {
-		fmt.Println("Typed only Phone, there will be no changes.")
-		return
-	}
+	rec := getRecordFromTerminal()
 
 	jsonRequestBytes, err := json.Marshal(rec)
 	if err != nil {
 		fmt.Println("getRecord()", err)
+		return
 	}
 
 	url := "http://localhost:8000/update"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonRequestBytes))
 	if err != nil {
 		fmt.Println("getRecord()", err)
+		return
 	}
-	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
+
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var response Response
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if response.ErrorMessage != "" {
+		fmt.Println("error from server: ", response.ErrorMessage)
+		return
+	}
+
 }
 
 func deleteRecord() {
@@ -243,11 +229,6 @@ func deleteRecord() {
 	fmt.Print("Enter Phone: ")
 	scanner.Scan()
 	Phone := scanner.Text()
-
-	if Phone == "" {
-		fmt.Println("You Forgot the Phone")
-		return
-	}
 
 	jsonRequestBytes, err := json.Marshal(Record{Phone: Phone})
 	if err != nil {
@@ -265,15 +246,25 @@ func deleteRecord() {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("getRecord()", err)
+		fmt.Println(err)
+		return
 	}
+
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("getRecord()", err)
+		fmt.Println(err)
+		return
 	}
-	fmt.Println("response Body:", string(body))
+	var response Response
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if response.ErrorMessage != "" {
+		fmt.Println("error from server: ", response.ErrorMessage)
+		return
+	}
 }
