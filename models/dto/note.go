@@ -6,5 +6,3 @@ type Note struct {
 	AuthorLastName  string `json:"authorLastName"`
 	Note            string `json:"note"`
 }
-
-type Notes []Note

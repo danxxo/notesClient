@@ -13,10 +13,10 @@ func main() {
 
 	for {
 		fmt.Println("Choose an action:")
-		fmt.Println("1. Create a Note")
-		fmt.Println("2. Get a Note")
-		fmt.Println("3. Update Note by phone. Phone is NEEDABLE!")
-		fmt.Println("4. Delete Note by Phone. Phone is NEEDABLE!")
+		fmt.Println("1. Add Note")
+		fmt.Println("2. Get Note")
+		fmt.Println("3. Update Note")
+		fmt.Println("4. Delete Note")
 		fmt.Println("5. Exit")
 
 		scanner.Scan()

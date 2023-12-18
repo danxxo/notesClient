@@ -12,19 +12,20 @@ import (
 )
 
 func AddNote(scanner *bufio.Scanner) {
-	fmt.Println("Lets create a new Note!")
+	fmt.Println("NEW")
 
 	note := getNoteFromTerminal(scanner)
 
 	jsonRequestBytes, err := json.Marshal(note)
 	if err != nil {
-		fmt.Println("addNote()", err)
+		fmt.Println("addNote(): json.Marshal(note)", err)
+		return
 	}
 
 	url := "http://localhost:8000/add"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonRequestBytes))
 	if err != nil {
-		fmt.Println("addNote()", err)
+		fmt.Println("addNote(): http.NewRequest(\"POST\", url, bytes.NewBuffer(jsonRequestBytes))", err)
 	}
 
 	req.Header.Set("X-Custom-Header", "myvalue")
@@ -33,31 +34,39 @@ func AddNote(scanner *bufio.Scanner) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("NoteAdd()", err)
+		fmt.Println("AddNote(): client.Do(req)", err)
+		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Print("addNote()", err)
+		fmt.Print("AddNote(): io.ReadAll(resp.Body)", err)
 		return
 	}
 	responseHandler(body)
 }
 
 func GetNote(scanner *bufio.Scanner) {
-	note := getNoteFromTerminal(scanner)
 
-	jsonRequestBytes, err := json.Marshal(note)
+	fmt.Println("GET")
+	fmt.Print("[int] ID: ")
+
+	// Scanner
+	scanner.Scan()
+	ID := scanner.Text()
+
+	// Marshaling
+	jsonRequestBytes, err := json.Marshal(dto.Note{Id: ID})
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote(): json.Marshal(dto.Note{Id: ID})", err)
 		return
 	}
 
 	url := "http://localhost:8000/get"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonRequestBytes))
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote():  http.NewRequest(\"POST\", url, bytes.NewBuffer(jsonRequestBytes))", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -65,7 +74,8 @@ func GetNote(scanner *bufio.Scanner) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println(resp)
+		fmt.Println("getNote(): client.Do(req)", err)
 		return
 	}
 
@@ -80,19 +90,28 @@ func GetNote(scanner *bufio.Scanner) {
 }
 
 func UpdateNotes(scanner *bufio.Scanner) {
-	fmt.Println("Let s Update Note. Dont forget fill Phone field")
+	fmt.Println("UPDATE")
+	fmt.Print("[int] ID: ")
+
+	// Scanner
+	scanner.Scan()
+	ID := scanner.Text()
+
+	fmt.Println("Fill fields you want to update")
 	note := getNoteFromTerminal(scanner)
+
+	note.Id = ID
 
 	jsonRequestBytes, err := json.Marshal(note)
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote(): json.Marshal(note)", err)
 		return
 	}
 
 	url := "http://localhost:8000/update"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonRequestBytes))
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote(): http.NewRequest(\"POST\", url, bytes.NewBuffer(jsonRequestBytes))", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -116,8 +135,8 @@ func UpdateNotes(scanner *bufio.Scanner) {
 
 func DeleteNote(scanner *bufio.Scanner) {
 
-	fmt.Println("To delete Note Enter the ID")
-	fmt.Print("Enter ID: ")
+	fmt.Println("DELETE")
+	fmt.Print("[int] ID: ")
 
 	// Scanner
 	scanner.Scan()
@@ -126,14 +145,16 @@ func DeleteNote(scanner *bufio.Scanner) {
 	// Marshaling
 	jsonRequestBytes, err := json.Marshal(dto.Note{Id: ID})
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote(): json.Marshal(dto.Note{Id: ID})", err)
+		return
 	}
 
 	// POST request
 	url := "http://localhost:8000/delete"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonRequestBytes))
 	if err != nil {
-		fmt.Println("getNote()", err)
+		fmt.Println("getNote(): http.NewRequest(\"POST\", url, bytes.NewBuffer(jsonRequestBytes))", err)
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 

@@ -8,7 +8,6 @@ import (
 )
 
 func responseHandler(body []byte) {
-	fmt.Println("--Response--")
 
 	var response dto.Response
 	err := json.Unmarshal(body, &response)
@@ -17,35 +16,32 @@ func responseHandler(body []byte) {
 		return
 	}
 
-	fmt.Println("\tResult: ", response.Result)
 	if response.Result == "error" {
-		fmt.Println("\tserver returned error: ", response.Error)
-		fmt.Println("--End Response--")
+		fmt.Print("\nserver returned error: \x1b[31m", response.Error, "\x1b[0m\n")
 		return
 	}
-	fmt.Println("--End Response--")
+	if response.Result == "OK" {
+		fmt.Print("\n\x1b[32m# Operation Succeded!\x1b[0m\n")
+	}
 
 	if response.Data == nil {
 		return
 	}
 
-	var notes dto.Notes
-	err = json.Unmarshal(response.Data, &notes)
+	var note dto.Note
+	nilNote := dto.Note{}
+
+	err = json.Unmarshal(response.Data, &note)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if len(notes) == 0 {
+	if note == nilNote {
 		return
 	}
-
-	fmt.Println("--Get Notes--")
-	for i, record := range notes {
-		fmt.Println("\tRecord ", i)
-		fmt.Println("\t\tFirtsName: ", record.AuthorFirstName)
-		fmt.Println("\t\tLastName: ", record.AuthorLastName)
-		fmt.Println("\t\tNote: ", record.Note)
-	}
-	fmt.Println("--END--")
+	fmt.Println("\x1b[35mNote\x1b[0m")
+	fmt.Println("\x1b[34mFirtsName:\x1b[0m ", note.AuthorFirstName)
+	fmt.Println("\x1b[34mLastName:\x1b[0m ", note.AuthorLastName)
+	fmt.Println("\x1b[34mNote:\x1b[0m ", note.Note)
 }
